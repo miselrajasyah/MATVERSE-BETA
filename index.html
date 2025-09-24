@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MathVerse Final Frontier - Platform Pembelajaran Matematika</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #1a202c; --bg-light: #f7fafc; 
+            --card-dark: #2d3748; --card-light: #ffffff;
+            --text-dark: #e2e8f0; --text-light: #1a202c;
+            --text-muted-dark: #a0aec0; --text-muted-light: #718096;
+            --border-dark: #4a5568; --border-light: #e2e8f0;
+            --primary: #4299e1; --secondary: #9f7aea;
+        }
+        html.theme-cosmic { --primary: #4299e1; --secondary: #9f7aea; }
+        html.theme-forest { --primary: #48bb78; --secondary: #8b5cf6; }
+        html.theme-ocean { --primary: #38bdf8; --secondary: #3b82f6; }
+        html.theme-sunset { --primary: #f59e0b; --secondary: #ef4444; }
+
+        html.dark {
+            --bg-main: var(--bg-dark); --card-main: var(--card-dark);
+            --text-main: var(--text-dark); --text-muted: var(--text-muted-dark);
+            --border-main: var(--border-dark);
+        }
+        html.light {
+            --bg-main: var(--bg-light); --card-main: var(--card-light);
+            --text-main: var(--text-light); --text-muted: var(--text-muted-light);
+            --border-main: var(--border-light);
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-main); color: var(--text-main); transition: background-color 0.3s, color 0.3s; }
+        .view { display: none; }
+        .view.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        #login-screen.active { display: flex; }
+        .login-card-exit { animation: fadeOutZoom 0.5s ease-in forwards; }
+        @keyframes fadeOutZoom { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.9); } }
+        #app.app-enter { animation: fadeIn 0.5s ease-out 0.2s forwards; opacity: 0; }
+
+        .sidebar-link.active { background-image: linear-gradient(to right, var(--primary), var(--secondary)); color: white !important; font-weight: 600; box-shadow: 0 4px 14px 0 rgb(0 118 255 / 39%); }
+        .bottom-nav a.active { color: var(--primary); }
+
+        .card { background-color: var(--card-main); border: 1px solid var(--border-main); transition: background-color 0.3s, border-color 0.3s; }
+        .modal-content { background-color: var(--card-main); }
+
+        .topic-locked { opacity: 0.5; cursor: not-allowed; }
+        
+        .btn-primary { background-image: linear-gradient(to right, var(--primary), var(--secondary)); color: white; transition: all 0.3s ease; box-shadow: 0 2px 8px -1px rgba(0,0,0,.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px -1px rgba(0,0,0,.4); }
+        
+        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 4px; } ::-webkit-scrollbar-thumb:hover { background: #718096; }
+    </style>
+</head>
+<body>
+    <audio id="background-music" loop src="https://www.chosic.com/wp-content/uploads/2021/04/purrple-cat-equinox.mp3"></audio>
+    <!-- Login Screen -->
+    <div id="login-screen" class="view active items-center justify-center h-screen p-4">
+        <div id="login-card" class="text-center card p-8 sm:p-10 rounded-2xl shadow-2xl w-full max-w-md border-0 transition-all duration-500">
+            <h1 class="text-4xl sm:text-5xl font-bold">Math<span style="color: var(--primary);">Verse</span> Ultimate</h1>
+            <p class="mt-3 mb-8 text-muted">Gerbang Anda menuju Semesta Matematika.</p>
+            <input type="text" id="name-input" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 transition" style="background-color: var(--bg-main); border-color: var(--border-main);" placeholder="Masukkan nama Anda">
+            <button id="start-button" class="mt-6 w-full font-bold py-3 px-4 rounded-lg btn-primary">Masuk & Mulai Belajar</button>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" class="hidden">
+        <div class="flex h-screen">
+            <!-- Sidebar (Desktop) -->
+            <aside class="w-64 shadow-lg flex-shrink-0 hidden md:flex flex-col" style="background-color:rgba(45, 55, 72, 0.5); border-right: 1px solid var(--border-main);">
+                <div class="p-6 border-b" style="border-color: var(--border-main);">
+                    <h1 class="text-3xl font-bold">Math<span style="color: var(--primary);">Verse</span></h1>
+                </div>
+                <nav class="mt-6 flex-1 space-y-2">
+                    <a href="#dasbor" class="sidebar-link nav-link flex items-center px-6 py-3 rounded-r-full mr-4 transition-all duration-300" style="color: var(--text-muted);"><span class="mr-4 text-xl">🏠</span> Dasbor</a>
+                    <a href="#materi" class="sidebar-link nav-link flex items-center px-6 py-3 rounded-r-full mr-4 transition-all duration-300" style="color: var(--text-muted);"><span class="mr-4 text-xl">📚</span> Materi</a>
+                    <a href="#leaderboard" class="sidebar-link nav-link flex items-center px-6 py-3 rounded-r-full mr-4 transition-all duration-300" style="color: var(--text-muted);"><span class="mr-4 text-xl">🏆</span> Peringkat</a>
+                    <a href="#diskusi" class="sidebar-link nav-link flex items-center px-6 py-3 rounded-r-full mr-4 transition-all duration-300" style="color: var(--text-muted);"><span class="mr-4 text-xl">💬</span> Diskusi</a>
+                    <a href="#profil" class="sidebar-link nav-link flex items-center px-6 py-3 rounded-r-full mr-4 transition-all duration-300" style="color: var(--text-muted);"><span class="mr-4 text-xl">👤</span> Profil</a>
+                    <a href="#pengaturan" class="sidebar-link nav-link flex items-center px-6 py-3 rounded-r-full mr-4 transition-all duration-300" style="color: var(--text-muted);"><span class="mr-4 text-xl">⚙️</span> Pengaturan</a>
+                </nav>
+                <div class="p-4 border-t" style="border-color: var(--border-main);">
+                    <button id="logout-button" class="w-full text-left text-sm hover:text-red-400 p-2 rounded-lg hover:bg-red-900/50" style="color: var(--text-muted);">Keluar</button>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main id="main-content-area" class="flex-1 flex flex-col overflow-hidden"></main>
+        </div>
+        
+        <!-- Bottom Navigation (Mobile) -->
+        <nav class="md:hidden shadow-lg bottom-nav flex justify-around p-2 z-20 border-t" style="background-color: rgba(45, 55, 72, 0.8); backdrop-filter: blur(10px); border-color: var(--border-main);">
+             <a href="#dasbor" class="nav-link flex flex-col items-center p-2 rounded-lg w-full" style="color: var(--text-muted);"><span class="text-2xl">🏠</span><span class="text-xs">Dasbor</span></a>
+             <a href="#materi" class="nav-link flex flex-col items-center p-2 rounded-lg w-full" style="color: var(--text-muted);"><span class="text-2xl">📚</span><span class="text-xs">Materi</span></a>
+             <a href="#leaderboard" class="nav-link flex flex-col items-center p-2 rounded-lg w-full" style="color: var(--text-muted);"><span class="text-2xl">🏆</span><span class="text-xs">Peringkat</span></a>
+             <a href="#diskusi" class="nav-link flex flex-col items-center p-2 rounded-lg w-full" style="color: var(--text-muted);"><span class="text-2xl">💬</span><span class="text-xs">Diskusi</span></a>
+             <a href="#profil" class="nav-link flex flex-col items-center p-2 rounded-lg w-full" style="color: var(--text-muted);"><span class="text-2xl">👤</span><span class="text-xs">Profil</span></a>
+             <a href="#pengaturan" class="nav-link flex flex-col items-center p-2 rounded-lg w-full" style="color: var(--text-muted);"><span class="text-2xl">⚙️</span><span class="text-xs">Pengaturan</span></a>
+        </nav>
+    </div>
+
+    <!-- Modal Template -->
+    <div id="modal-container" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
+        <div class="modal-content p-8 rounded-2xl shadow-2xl w-full max-w-md text-center border"></div>
+    </div>
+
+    <!-- Templates -->
+    <template id="header-template">
+        <header class="shadow-lg p-4 flex justify-between items-center z-10 border-b" style="background-color: rgba(45, 55, 72, 0.5); backdrop-filter: blur(10px); border-color: var(--border-main);">
+            <h2 id="header-title" class="text-xl font-semibold"></h2>
+            <div class="flex items-center">
+                <span class="hidden sm:inline mr-3" style="color: var(--text-muted);">Halo, <span id="user-name-display" class="font-bold" style="color: var(--text-main);"></span>!</span>
+                <div id="user-avatar-display" class="w-10 h-10 rounded-full ring-2 ring-blue-400 bg-cover bg-center"></div>
+            </div>
+        </header>
+        <div id="view-container" class="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 pb-24 md:pb-6"></div>
+    </template>
+    
+    <template id="dasbor-template">
+        <div class="view" id="dasbor-view">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="card p-5 rounded-xl shadow-lg"><h3 class="font-semibold" style="color: var(--text-muted);">Materi Selesai</h3><p id="stat-materi" class="text-3xl font-bold"></p></div>
+                <div class="card p-5 rounded-xl shadow-lg"><h3 class="font-semibold" style="color: var(--text-muted);">Lencana Didapat</h3><p id="stat-lencana" class="text-3xl font-bold text-amber-400"></p></div>
+                <div class="card p-5 rounded-xl shadow-lg"><h3 class="font-semibold" style="color: var(--text-muted);">Poin Terkumpul</h3><p id="stat-poin" class="text-3xl font-bold text-green-400"></p></div>
+                <div class="card p-5 rounded-xl shadow-lg"><h3 class="font-semibold" style="color: var(--text-muted);">Terakhir Dilihat</h3><p id="last-viewed" class="text-xl font-bold text-indigo-400 truncate"></p></div>
+            </div>
+            <div class="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 card p-6 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-lg mb-4">Rekomendasi Untuk Anda</h3>
+                    <div id="continue-learning-card"></div>
+                </div>
+                <div class="card p-6 rounded-xl shadow-lg">
+                    <h3 class="font-bold text-lg mb-4">Tantangan Harian</h3>
+                    <div id="daily-challenge-card" class="p-4 rounded-lg text-center" style="background-color: var(--bg-main);"></div>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <template id="materi-template">
+         <div class="view" id="materi-view">
+             <div class="card p-6 rounded-xl shadow-lg">
+                 <div class="flex flex-wrap justify-between items-center mb-4 border-b pb-3 gap-4" style="border-color: var(--border-main);">
+                    <h2 class="text-2xl font-bold">Pilih Topik Pembelajaran</h2>
+                    <input type="text" id="topic-search" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" style="background-color: var(--bg-main); border-color: var(--border-main);" placeholder="Cari materi...">
+                 </div>
+                 <div id="topic-list" class="space-y-3 mt-4"></div>
+             </div>
+        </div>
+    </template>
+    
+    <template id="topic-detail-template">
+        <div class="view" id="topic-detail-view">
+            <button id="back-to-materi" class="mb-4 font-semibold hover:underline" style="color: var(--primary);">&larr; Kembali ke Daftar Topik</button>
+            <div class="card p-6 rounded-xl shadow-lg">
+                <h2 id="topic-title" class="text-3xl font-bold mb-1"></h2>
+                <p id="topic-description" class="mb-6" style="color: var(--text-muted);"></p>
+                <div id="topic-accordion" class="space-y-2"></div>
+            </div>
+        </div>
+    </template>
+    
+    <template id="leaderboard-template">
+        <div class="view" id="leaderboard-view">
+             <div class="card p-6 rounded-xl shadow-lg">
+                 <h2 class="text-2xl font-bold mb-4 border-b pb-3" style="border-color: var(--border-main);">Papan Peringkat</h2>
+                 <div id="leaderboard-list" class="space-y-2 mt-4"></div>
+                 <div id="current-user-rank" class="mt-4 pt-2 border-t" style="border-color: var(--border-main);"></div>
+             </div>
+        </div>
+    </template>
+    
+    <template id="diskusi-template">
+        <div class="view" id="diskusi-view">
+             <div class="card p-6 rounded-xl shadow-lg flex flex-col h-[80vh]">
+                 <h2 class="text-2xl font-bold mb-4 border-b pb-3" style="border-color: var(--border-main);">Ruang Diskusi</h2>
+                 <div id="discussion-list" class="flex-1 space-y-4 mt-4 overflow-y-auto pr-2"></div>
+                 <div class="mt-4 pt-4 border-t" style="border-color: var(--border-main);">
+                    <div class="flex space-x-2">
+                        <input type="text" id="discussion-input" class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" style="background-color: var(--bg-main); border-color: var(--border-main);" placeholder="Tulis pesan Anda...">
+                        <button id="discussion-send-btn" class="font-bold py-2 px-4 rounded-lg btn-primary">Kirim</button>
+                    </div>
+                 </div>
+             </div>
+        </div>
+    </template>
+
+    <template id="profil-template">
+        <div class="view" id="profil-view">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-1 card p-8 rounded-xl shadow-lg text-center">
+                    <div id="user-avatar-profile" class="w-24 h-24 mx-auto ring-4 ring-blue-400/50 shadow-lg rounded-full bg-cover bg-center"></div>
+                    <h2 id="user-name-profile" class="text-3xl font-bold mt-4"></h2>
+                    <p class="" style="color: var(--text-muted);">Siswa MathVerse</p>
+                    <div id="badge-collection" class="mt-6 flex justify-center flex-wrap gap-4"></div>
+                </div>
+                 <div class="lg:col-span-2 card p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-4">Rangkuman Kemampuan</h3>
+                    <div class="h-80"><canvas id="progress-chart"></canvas></div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+     <template id="pengaturan-template">
+        <div class="view" id="pengaturan-view">
+            <div class="card p-6 rounded-xl shadow-lg max-w-3xl mx-auto">
+                <h2 class="text-2xl font-bold mb-6 border-b pb-3" style="border-color: var(--border-main);">Pengaturan</h2>
+                <div class="space-y-8">
+                    <!-- Theme Customizer -->
+                    <div>
+                        <h3 class="font-semibold text-lg">Tema Website</h3>
+                        <div class="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <button data-theme="cosmic" class="theme-btn h-12 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 focus:ring-4 ring-offset-2 ring-offset-card-main"></button>
+                            <button data-theme="forest" class="theme-btn h-12 rounded-lg bg-gradient-to-r from-green-500 to-indigo-500 focus:ring-4 ring-offset-2 ring-offset-card-main"></button>
+                            <button data-theme="ocean" class="theme-btn h-12 rounded-lg bg-gradient-to-r from-cyan-400 to-blue-600 focus:ring-4 ring-offset-2 ring-offset-card-main"></button>
+                            <button data-theme="sunset" class="theme-btn h-12 rounded-lg bg-gradient-to-r from-amber-500 to-red-600 focus:ring-4 ring-offset-2 ring-offset-card-main"></button>
+                        </div>
+                    </div>
+                     <!-- Avatar Customizer -->
+                    <div class="border-t pt-6" style="border-color: var(--border-main);">
+                        <h3 class="font-semibold text-lg">Avatar & Profil</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 mt-4">
+                            <div class="sm:col-span-1 flex flex-col items-center">
+                                <div id="avatar-preview" class="w-24 h-24 rounded-full ring-4 ring-blue-400/50 shadow-lg flex-shrink-0 bg-cover bg-center"></div>
+                                <input type="file" id="avatar-upload-input" class="hidden" accept="image/*">
+                                <button id="avatar-upload-btn" class="mt-2 text-sm font-semibold text-blue-400 hover:underline">Unggah Foto</button>
+                                <button id="avatar-remove-btn" class="mt-1 text-xs text-red-400 hover:underline">Hapus Foto</button>
+                            </div>
+                            <div class="sm:col-span-2 w-full space-y-2">
+                                <p class="text-sm font-medium mb-2" style="color: var(--text-muted);">Atau, buat avatarmu sendiri:</p>
+                                <div>
+                                    <label class="text-sm font-medium">Warna Latar</label>
+                                    <input type="color" id="avatar-color" class="w-full h-8 p-1 border rounded-lg" style="background-color: var(--bg-main); border-color: var(--border-main);">
+                                </div>
+                                <div>
+                                    <label class="text-sm font-medium">Bentuk Kepala</label>
+                                    <select id="avatar-head" class="w-full p-2 border rounded-lg" style="background-color: var(--bg-main); border-color: var(--border-main); color: var(--text-main);"></select>
+                                </div>
+                                <div>
+                                    <label class="text-sm font-medium">Mata</label>
+                                    <select id="avatar-eyes" class="w-full p-2 border rounded-lg" style="background-color: var(--bg-main); border-color: var(--border-main); color: var(--text-main);"></select>
+                                </div>
+                                 <div>
+                                    <label class="text-sm font-medium">Mulut</label>
+                                    <select id="avatar-mouth" class="w-full p-2 border rounded-lg" style="background-color: var(--bg-main); border-color: var(--border-main); color: var(--text-main);"></select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Audio -->
+                     <div class="border-t pt-6" style="border-color: var(--border-main);">
+                        <h3 class="font-semibold text-lg">Audio</h3>
+                        <div class="flex justify-between items-center mt-2">
+                             <p class="text-sm" style="color: var(--text-muted);">Musik Latar Belakang</p>
+                             <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="music-toggle" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                    <!-- Light/Dark Mode -->
+                     <div class="border-t pt-6" style="border-color: var(--border-main);">
+                        <h3 class="font-semibold text-lg">Mode Tampilan</h3>
+                        <div class="mt-2 flex items-center space-x-4">
+                            <label class="flex items-center"><input type="radio" name="theme-mode" value="light" class="mr-2"> Terang</label>
+                            <label class="flex items-center"><input type="radio" name="theme-mode" value="dark" class="mr-2"> Gelap</label>
+                        </div>
+                    </div>
+                    <!-- Reset Progress -->
+                    <div class="border-t pt-6" style="border-color: var(--border-main);">
+                        <h3 class="font-semibold text-lg">Reset Kemajuan Belajar</h3>
+                        <p class="text-sm mt-1" style="color: var(--text-muted);">Aksi ini akan menghapus semua kemajuan belajar, poin, dan lencana Anda. Gunakan dengan hati-hati.</p>
+                        <button id="reset-progress-btn" class="mt-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition">Reset Kemajuan</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <template id="quiz-template">
+         <div>
+            <div class="flex justify-between items-center mb-2">
+                <p class="text-sm" style="color: var(--text-muted);"><span id="quiz-q-current"></span> dari <span id="quiz-q-total"></span></p>
+                <button id="hint-btn" class="text-xs bg-amber-500/20 text-amber-300 px-3 py-1 rounded-full hover:bg-amber-500/40 disabled:opacity-50 disabled:cursor-not-allowed">Bantuan (-5 Poin)</button>
+            </div>
+            <div class="w-full rounded-full h-2.5 mb-4" style="background-color: var(--bg-main);"><div id="quiz-progress" class="h-2.5 rounded-full transition-all duration-300" style="background-image: linear-gradient(to right, var(--primary), var(--secondary));"></div></div>
+            <h4 id="question-text" class="text-lg font-semibold mb-4 min-h-[56px]"></h4>
+            <div id="options-container" class="space-y-3"></div>
+            <div id="feedback-container" class="mt-4 p-3 border-l-4 rounded-md text-sm font-medium hidden"></div>
+         </div>
+    </template>
+
+    <template id="quiz-result-template">
+        <div class="text-center py-8">
+            <h4 class="text-3xl font-bold">Latihan Selesai!</h4>
+            <p class="text-lg mt-2" style="color: var(--text-muted);">Skor Anda:</p>
+            <p id="quiz-score" class="text-5xl font-bold my-4" style="color: var(--primary);"></p>
+            <p id="quiz-feedback-message" class="mb-6" style="color: var(--text-muted);"></p>
+            <button id="quiz-finish-btn" class="font-bold py-3 px-8 rounded-lg btn-primary">Kembali ke Topik</button>
+        </div>
+    </template>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => App.init());
+
+        const DB = {
+            get: (key) => JSON.parse(localStorage.getItem(key)),
+            set: (key, value) => localStorage.setItem(key, JSON.stringify(value)),
+        };
+        
+        const Content = {
+            topics: {
+                'aljabar': {
+                    title: 'Aljabar Dasar',
+                    description: 'Mempelajari dasar-dasar aljabar, mulai dari variabel, persamaan, hingga fungsi.',
+                    unlocks: 'aljabar-lanjutan',
+                    modules: {
+                        'konteks': { title: 'Mengapa Aljabar Penting?', content: `<p style="color:var(--text-muted);">Menurut hasil PISA 2022 oleh OECD, kemampuan bernalar matematis, yang berakar pada aljabar, adalah salah satu tantangan terbesar bagi siswa. Aljabar adalah bahasa logika untuk memecahkan masalah secara sistematis.</p>` },
+                        'teori': { title: 'Teori: Variabel dan Persamaan', content: '<p style="color:var(--text-muted);"><b>Variabel</b> adalah simbol (seperti x) yang mewakili nilai yang tidak diketahui. <b>Persamaan</b> adalah pernyataan bahwa dua ekspresi matematika memiliki nilai yang sama (=). Tujuannya adalah menemukan nilai variabel yang membuat persamaan itu benar.</p>' },
+                        'latihan': { title: 'Latihan Interaktif: Kuis Aljabar', type: 'quiz' }
+                    }
+                },
+                'aljabar-lanjutan': {
+                    title: 'Aljabar Lanjutan: Vektor',
+                    description: 'Memahami vektor sebagai besaran yang memiliki arah dan nilai, serta operasinya.',
+                    unlocks: 'matriks',
+                    modules: {
+                        'teori': { title: 'Teori: Pengenalan Vektor', content: `<p style="color:var(--text-muted);"><b>Vektor</b> adalah objek geometris yang memiliki besaran (panjang) dan arah. Vektor sangat penting dalam fisika dan teknik untuk merepresentasikan gaya dan kecepatan. Kita bisa menjumlahkan vektor dengan menggabungkan komponen x dan y-nya.</p>`},
+                        'latihan': { title: 'Latihan Interaktif: Penjumlahan Vektor', type: 'vector' }
+                    }
+                },
+                'matriks': {
+                    title: 'Matriks',
+                    description: 'Mempelajari susunan bilangan dalam baris dan kolom serta operasinya.',
+                    unlocks: 'geometri',
+                    modules: {
+                        'teori': { title: 'Teori: Apa itu Matriks?', content: `<p style="color:var(--text-muted);"><b>Matriks</b> adalah susunan bilangan, simbol, atau ekspresi, yang disusun dalam baris dan kolom. Matriks banyak digunakan dalam aljabar linear untuk menyelesaikan sistem persamaan linear, serta dalam grafika komputer.</p>`},
+                        'latihan': { title: 'Latihan Interaktif: Penjumlahan Matriks', type: 'matrix' }
+                    }
+                },
+                'geometri': { 
+                    title: 'Geometri Ruang 3D',
+                    description: 'Menjelajahi dunia bentuk tiga dimensi seperti kubus, bola, dan piramida.',
+                    unlocks: 'geometri-analitik',
+                    modules: {
+                        'teori': { title: 'Teori: Memvisualisasikan Ruang', content: '<p style="color:var(--text-muted);">Geometri ruang mempelajari sifat-sifat objek dalam tiga dimensi. Kemampuan memvisualisasikan objek 3D sangat penting dalam bidang seperti arsitektur, teknik, dan desain. Di sini kita akan berinteraksi dengan beberapa bentuk dasar.</p>' },
+                        'latihan': { title: 'Latihan Interaktif: Eksplorasi Benda 3D', type: '3d' }
+                    }
+                },
+                'geometri-analitik': {
+                    title: 'Geometri Analitik',
+                    description: 'Menjembatani aljabar dan geometri untuk mempelajari bentuk geometris menggunakan koordinat.',
+                    unlocks: 'trigonometri',
+                    modules: {
+                        'teori': { title: 'Teori: Persamaan Garis Lurus', content: `<p style="color:var(--text-muted)">Bentuk paling umum dari persamaan garis lurus adalah <b>y = mx + c</b>, di mana 'm' adalah gradien (kemiringan) garis dan 'c' adalah intersep-y (titik di mana garis memotong sumbu y).</p>`},
+                        'latihan': { title: 'Latihan: Visualisasi Persamaan Garis', type: 'line-equation' }
+                    }
+                },
+                'trigonometri': {
+                    title: 'Trigonometri',
+                    description: 'Mempelajari hubungan antara sudut dan sisi dalam segitiga.',
+                    unlocks: 'kalkulus',
+                    modules: {
+                        'teori': { title: 'Teori: Lingkaran Satuan', content: `<p style="color:var(--text-muted);"><b>Lingkaran Satuan</b> adalah lingkaran dengan radius 1 yang berpusat di titik (0,0). Ini adalah alat fundamental untuk memahami fungsi trigonometri (sinus, kosinus, tangen) untuk semua sudut.</p>`},
+                        'latihan': { title: 'Latihan: Eksplorasi Lingkaran Satuan', type: 'unit-circle' },
+                        'latihan2': { title: 'Latihan: Grafik Fungsi Sinus', type: 'sine-wave' }
+                    }
+                },
+                'kalkulus': {
+                    title: 'Kalkulus Dasar',
+                    description: 'Memahami konsep limit, turunan, dan bagaimana fungsi berubah.',
+                    unlocks: 'probabilitas',
+                     modules: {
+                        'teori': { title: 'Teori: Apa itu Turunan?', content: `<p style="color:var(--text-muted);">Kalkulus adalah studi tentang perubahan. Konsep fundamentalnya adalah <b>turunan</b>, yang mengukur laju perubahan sesaat dari suatu fungsi. Secara grafis, turunan adalah kemiringan dari garis singgung kurva pada titik tersebut.</p>` },
+                        'latihan': { title: 'Latihan Interaktif: Visualisasi Grafik', type: 'graph' }
+                    }
+                },
+                'probabilitas': {
+                    title: 'Probabilitas',
+                    description: 'Mempelajari peluang dan kemungkinan terjadinya suatu peristiwa.',
+                    unlocks: 'statistika',
+                    modules: {
+                        'teori': { title: 'Teori: Peluang Dasar', content: `<p style="color:var(--text-muted);"><b>Probabilitas</b> atau peluang adalah ukuran kemungkinan terjadinya suatu peristiwa. Nilainya berkisar dari 0 (tidak mungkin terjadi) hingga 1 (pasti terjadi). Peluang suatu kejadian dihitung dengan membagi jumlah hasil yang diinginkan dengan jumlah total hasil yang mungkin.</p>` },
+                        'latihan': { title: 'Latihan Interaktif: Simulator Dadu', type: 'dice-sim' },
+                        'latihan2': { title: 'Latihan Interaktif: Simulator Koin', type: 'coin-sim' }
+                    }
+                },
+                 'statistika': {
+                    title: 'Statistika Dasar',
+                    description: 'Belajar mengumpulkan, menganalisis, dan menginterpretasikan data.',
+                    unlocks: null,
+                    modules: {
+                        'teori': { title: 'Teori: Ukuran Pemusatan Data', content: `<p style="color:var(--text-muted);">Statistika membantu kita menemukan 'sinyal' di tengah 'kebisingan' data. Tiga ukuran pemusatan data yang paling umum adalah <b>Mean</b> (rata-rata), <b>Median</b> (nilai tengah), dan <b>Modus</b> (nilai yang sering muncul).</p>` },
+                        'latihan': { title: 'Latihan Interaktif: Kuis Statistika', type: 'quiz' }
+                    }
+                }
+            },
+            quizzes: {
+                'aljabar': [
+                    { q: "Jika 3x - 2 = 10, maka x = ?", o: ["3", "4", "5"], a: "4", hint: "Tambahkan 2 di kedua sisi, lalu bagi dengan 3." },
+                    { q: "Hasil dari (x+4)(x-1) adalah...", o: ["x²+3x-4", "x²-3x-4", "x²-5x+4"], a: "x²+3x-4", hint: "Gunakan metode FOIL: First, Outer, Inner, Last." },
+                    { q: "Faktor dari x² - 9 adalah...", o: ["(x-3)(x-3)", "(x+3)(x+3)", "(x-3)(x+3)"], a: "(x-3)(x+3)", hint: "Ini adalah bentuk selisih dua kuadrat, a² - b²." },
+                    { q: "Jika 5(x - 1) = 20, maka x = ?", o: ["4", "5", "6"], a: "5", hint: "Bagi kedua sisi dengan 5 terlebih dahulu." }
+                ],
+                'statistika': [
+                    { q: "Mean dari data 10, 20, 30 adalah...", o: ["15", "20", "25"], a: "20", hint: "Jumlahkan semua angka lalu bagi dengan banyaknya angka." },
+                    { q: "Median dari data 1, 5, 2, 8, 7 adalah...", o: ["2", "5", "7"], a: "5", hint: "Urutkan datanya terlebih dahulu." },
+                    { q: "Modus dari data 4, 5, 6, 6, 7 adalah...", o: ["4", "5", "6"], a: "6", hint: "Cari angka yang paling sering muncul." },
+                    { q: "Jangkauan (range) dari data 2, 10, 5, 8 adalah...", o: ["6", "8", "12"], a: "8", hint: "Jangkauan adalah selisih antara nilai terbesar dan terkecil." }
+                ]
+            },
+            badges: {
+                'aljabar_complete': { icon: '🧠', title: 'Ahli Aljabar' },
+                'aljabar-lanjutan_complete': { icon: '🧭', title: 'Navigator Vektor' },
+                'matriks_complete': { icon: '🧮', title: 'Master Matriks' },
+                'geometri_complete': { icon: '🧊', title: 'Penjelajah 3D' },
+                'geometri-analitik_complete': { icon: '📈', title: 'Pakar Koordinat' },
+                'trigonometri_complete': { icon: '⭕', title: 'Pakar Sudut'},
+                'kalkulus_complete': { icon: '∫', title: 'Pemikir Dinamis' },
+                'probabilitas_complete': { icon: '🎲', title: 'Ahli Peluang' },
+                'statistika_complete': { icon: '📊', title: 'Analis Data' },
+            },
+            glossary: {
+                'Gradien': 'Ukuran kemiringan suatu garis, sering dilambangkan dengan \'m\'.',
+                'Matriks': 'Susunan bilangan dalam baris dan kolom.',
+                'Determinan': 'Nilai skalar yang dapat dihitung dari elemen-elemen sebuah matriks persegi.',
+                'Vektor': 'Besaran yang memiliki nilai dan arah, direpresentasikan sebagai panah.',
+                'Skalar': 'Besaran yang hanya memiliki nilai, tanpa arah (contoh: suhu).',
+                'Sinus (sin)': 'Dalam lingkaran satuan, nilai sinus sebuah sudut adalah koordinat y dari titik pada lingkaran.',
+                'Kosinus (cos)': 'Dalam lingkaran satuan, nilai kosinus sebuah sudut adalah koordinat x dari titik pada lingkaran.',
+                'Variabel': 'Simbol (biasanya huruf) yang digunakan untuk mewakili angka yang tidak diketahui.',
+                'Persamaan': 'Pernyataan matematika yang menyatakan bahwa dua ekspresi adalah sama.',
+                'Turunan': 'Tingkat perubahan sesaat dari suatu fungsi terhadap salah satu variabelnya.',
+                'Mean': 'Rata-rata aritmatika dari sekumpulan nilai.',
+                'Median': 'Nilai tengah dari sekumpulan data yang telah diurutkan.',
+                'Modus': 'Nilai yang paling sering muncul dalam sekumpulan data.'
+            }
+        };
+
+        const App = {
+            state: {},
+            
+            init() {
+                this.cacheElements(); this.registerEventListeners();
+                const theme = DB.get('mathverse_theme') || 'dark';
+                document.documentElement.className = theme;
+                const siteTheme = DB.get('mathverse_site_theme') || 'theme-cosmic';
+                document.documentElement.classList.add(siteTheme);
+
+                const userData = DB.get('mathverse_user');
+                if (userData) {
+                    this.state = userData;
+                    if (!this.state.lastViewed) this.state.lastViewed = 'Belum ada';
+                    if (!this.state.avatar) this.state.avatar = { head: 'head1', eyes: 'eyes1', mouth: 'mouth1', color: '#4299e1' };
+                    Object.keys(Content.topics).forEach(topicId => {
+                        if (this.state.progress[topicId] === undefined) { this.state.progress[topicId] = 0; this.state.scores[topicId] = 0; }
+                    });
+                    this.saveState(); this.showApp();
+                } else { this.elements.loginScreen.classList.add('active'); }
+            },
+            
+            cacheElements() {
+                this.elements = {
+                    loginScreen: document.getElementById('login-screen'), app: document.getElementById('app'),
+                    loginCard: document.getElementById('login-card'),
+                    nameInput: document.getElementById('name-input'), startButton: document.getElementById('start-button'),
+                    mainContentArea: document.getElementById('main-content-area'), logoutButton: document.getElementById('logout-button'),
+                    modal: { container: document.getElementById('modal-container')},
+                    navLinks: document.querySelectorAll('.nav-link'),
+                    music: document.getElementById('background-music'),
+                };
+            },
+
+            registerEventListeners() {
+                this.elements.startButton.addEventListener('click', () => this.login());
+                this.elements.nameInput.addEventListener('keyup', (e) => e.key === 'Enter' && this.login());
+                this.elements.logoutButton.addEventListener('click', () => { localStorage.clear(); window.location.reload(); });
+                window.addEventListener('hashchange', () => this.navigate(window.location.hash));
+            },
+            
+            login() {
+                const name = this.elements.nameInput.value.trim(); if (!name) return;
+                const isFirstLogin = !DB.get('mathverse_user');
+                this.state = {
+                    name, points: 0, badges: [], lastViewed: 'Belum ada',
+                    avatar: { head: 'head1', eyes: 'eyes1', mouth: 'mouth1', color: '#4299e1', imageUrl: null },
+                    progress: Object.keys(Content.topics).reduce((acc, key) => ({...acc, [key]: 0 }), {}),
+                    scores: Object.keys(Content.topics).reduce((acc, key) => ({...acc, [key]: 0 }), {}),
+                    lastQuizDate: null, music: false,
+                };
+                this.saveState();
+                
+                this.elements.loginCard.classList.add('login-card-exit');
+                setTimeout(() => {
+                    this.elements.loginScreen.classList.remove('active');
+                    this.showApp();
+                }, 500);
+
+                if (isFirstLogin) {
+                    setTimeout(() => this.showWelcomeTour(), 1000);
+                }
+            },
+
+            saveState: () => DB.set('mathverse_user', App.state),
+
+            showApp() {
+                this.elements.app.classList.remove('hidden');
+                this.elements.app.classList.add('app-enter');
+                this.navigate(window.location.hash || '#dasbor');
+            },
+
+            navigate(hash) {
+                if (!hash || hash === '#') hash = '#dasbor';
+                const currentHash = window.location.hash;
+                if(currentHash !== hash) window.location.hash = hash;
+
+                this.elements.navLinks.forEach(l => { l.classList.toggle('active', l.getAttribute('href') === hash); });
+                
+                const headerTemplate = document.getElementById('header-template').content.cloneNode(true);
+                this.elements.mainContentArea.innerHTML = '';
+                this.elements.mainContentArea.appendChild(headerTemplate);
+                
+                const mainArea = this.elements.mainContentArea;
+                mainArea.querySelector('#user-name-display').textContent = this.state.name;
+                mainArea.querySelector('#user-avatar-display').innerHTML = Avatar.render(this.state.avatar);
+
+                const viewContainer = mainArea.querySelector('#view-container');
+                const headerTitleEl = mainArea.querySelector('#header-title');
+                let viewContent;
+
+                if (hash.startsWith('#topic-')) {
+                    const topicId = hash.substring(7);
+                    this.state.lastViewed = Content.topics[topicId].title; this.saveState();
+                    headerTitleEl.textContent = Content.topics[topicId].title;
+                    viewContent = this.renderTopicDetail(topicId);
+                } else {
+                    switch (hash) {
+                        case '#materi': headerTitleEl.textContent = 'Materi Belajar'; viewContent = this.renderMateriList(); break;
+                        case '#leaderboard': headerTitleEl.textContent = 'Papan Peringkat'; viewContent = this.renderLeaderboard(); break;
+                        case '#diskusi': headerTitleEl.textContent = 'Ruang Diskusi'; viewContent = this.renderDiskusi(); break;
+                        case '#profil': headerTitleEl.textContent = 'Profil & Kemajuan'; viewContent = this.renderProfil(); break;
+                        case '#pengaturan': headerTitleEl.textContent = 'Pengaturan'; viewContent = this.renderPengaturan(); break;
+                        default: headerTitleEl.textContent = 'Dasbor'; viewContent = this.renderDashboard(); break;
+                    }
+                }
+                viewContainer.appendChild(viewContent);
+                viewContainer.firstElementChild.classList.add('active');
+            },
+            
+            renderDashboard() {
+                const doc = document.getElementById('dasbor-template').content.cloneNode(true);
+                const completedCount = Object.values(this.state.progress).filter(p => p === 100).length;
+                doc.querySelector('#stat-materi').textContent = `${completedCount} / ${Object.keys(Content.topics).length}`;
+                doc.querySelector('#stat-lencana').textContent = `🏆 ${this.state.badges.length}`;
+                doc.querySelector('#stat-poin').textContent = this.state.points;
+                doc.querySelector('#last-viewed').textContent = this.state.lastViewed;
+                
+                const nextTopic = Object.keys(Content.topics).find(id => this.state.progress[id] < 100);
+                let continueCard = doc.querySelector('#continue-learning-card');
+                if(nextTopic) {
+                     continueCard.innerHTML = `<h4 class="font-bold text-lg">${Content.topics[nextTopic].title}</h4>
+                        <p class="text-sm mt-1 mb-3" style="color: var(--text-muted);">${Content.topics[nextTopic].description}</p>
+                        <button class="font-bold py-2 px-4 rounded-lg text-sm btn-primary" onclick="App.navigate('#topic-${nextTopic}')">Lanjutkan Belajar</button>`;
+                } else {
+                    continueCard.innerHTML = `<h4 class="font-bold text-lg text-green-400">Selamat!</h4><p style="color: var(--text-muted);">Anda telah menyelesaikan semua materi.</p>`;
+                }
+                
+                const today = new Date().toDateString();
+                const challengeCard = doc.querySelector('#daily-challenge-card');
+                if (this.state.lastQuizDate === today) {
+                    challengeCard.innerHTML = `<p class="font-semibold text-green-400">Tantangan Selesai!</p><p class="text-sm" style="color: var(--text-muted);">+50 Poin telah didapat.</p><div class="text-4xl mt-2">🎉</div>`;
+                } else {
+                     challengeCard.innerHTML = `<p class="font-semibold">Selesaikan 1 Latihan</p><p class="text-sm mb-2" style="color: var(--text-muted);">Dapatkan 50 poin ekstra!</p><button class="text-xs font-semibold p-2 rounded-md" style="background-color: var(--card-main); border: 1px solid var(--border-main);" onclick="App.navigate('#materi')">Kerjakan Sekarang</button>`;
+                }
+                return doc;
+            },
+            
+            renderMateriList() {
+                const doc = document.getElementById('materi-template').content.cloneNode(true);
+                const topicList = doc.querySelector('#topic-list');
+                const searchInput = doc.querySelector('#topic-search');
+
+                const renderList = (filter = '') => {
+                    topicList.innerHTML = '';
+                    let isLocked = false;
+                    Object.entries(Content.topics)
+                        .filter(([id, topic]) => topic.title.toLowerCase().includes(filter.toLowerCase()))
+                        .forEach(([id, topic]) => {
+                            const div = document.createElement('div');
+                            div.className = 'card border-0 p-4 rounded-lg flex justify-between items-center transition-all duration-300 hover:border-blue-500 hover:scale-[1.02]';
+                            let content = `<div><h3 class="font-bold text-lg">${topic.title}</h3><p class="text-sm" style="color: var(--text-muted);">${topic.description}</p></div>`;
+                            const progress = this.state.progress[id];
+                            
+                            if (isLocked) {
+                                div.classList.add('topic-locked');
+                                content += `<span class="text-3xl">🔒</span>`;
+                            } else {
+                                div.classList.add('cursor-pointer');
+                                div.onclick = () => this.navigate(`#topic-${id}`);
+                                if (progress === 100) content += `<span class="text-green-400 font-bold text-2xl">✔</span>`;
+                                else content += `<div class="progress-bar-container w-24"><div class="w-full rounded-full h-2" style="background-color: var(--bg-main);"><div class="h-2 rounded-full" style="width: ${progress}%; background-image: linear-gradient(to right, var(--primary), var(--secondary));"></div></div></div>`;
+                            }
+                            div.innerHTML = content;
+                            topicList.appendChild(div);
+                            if (progress < 100) isLocked = true;
+                        });
+                };
+
+                searchInput.addEventListener('input', () => renderList(searchInput.value));
+                renderList();
+                return doc;
+            },
+
+            renderLeaderboard() {
+                const doc = document.getElementById('leaderboard-template').content.cloneNode(true);
+                const list = doc.querySelector('#leaderboard-list');
+                const currentUserRankDiv = doc.querySelector('#current-user-rank');
+                // Mock data including current user
+                let leaderboardData = [
+                    { name: 'Rina', points: 2850 }, { name: 'Agus', points: 2700 }, { name: 'Budi', points: 2550 },
+                    { name: 'Citra', points: 2400 }, { name: 'Eka', points: 2200 },
+                    { name: this.state.name, points: this.state.points, isCurrentUser: true }
+                ].sort((a,b) => b.points - a.points);
+                
+                const rankBadges = ['🥇', '🥈', '🥉'];
+                
+                leaderboardData.slice(0, 5).forEach((user, index) => {
+                    const div = document.createElement('div');
+                    div.className = `flex items-center p-3 rounded-lg ${user.isCurrentUser ? 'bg-blue-500/20 border border-blue-500' : ''}`;
+                    div.innerHTML = `<div class="w-8 text-center text-lg font-bold">${rankBadges[index] || index + 1}</div><div class="flex-1 ml-4 font-semibold">${user.name}</div><div class="font-bold text-green-400">${user.points} Poin</div>`;
+                    list.appendChild(div);
+                });
+
+                const currentUserIndex = leaderboardData.findIndex(u => u.isCurrentUser);
+                if (currentUserIndex >= 5) {
+                     currentUserRankDiv.innerHTML = `<div class="flex items-center p-3 rounded-lg bg-blue-500/20 border border-blue-500"><div class="w-8 text-center text-lg font-bold">${currentUserIndex + 1}</div><div class="flex-1 ml-4 font-semibold">${this.state.name}</div><div class="font-bold text-green-400">${this.state.points} Poin</div></div>`;
+                }
+                return doc;
+            },
+            
+            renderDiskusi() {
+                const doc = document.getElementById('diskusi-template').content.cloneNode(true);
+                const list = doc.querySelector('#discussion-list');
+                const input = doc.querySelector('#discussion-input');
+                const sendBtn = doc.querySelector('#discussion-send-btn');
+                let messages = DB.get('mathverse_discussion') || [
+                    {name: "Admin", text: "Selamat datang di ruang diskusi! Silakan ajukan pertanyaan atau bagikan pengetahuan Anda."},
+                ];
+                
+                const renderMessages = () => {
+                    list.innerHTML = '';
+                    messages.forEach(msg => {
+                        const div = document.createElement('div');
+                        const isCurrentUser = msg.name === this.state.name;
+                        div.className = `flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`;
+                        div.innerHTML = `<div class="text-xs mb-1 ${isCurrentUser ? 'text-right' : 'text-left'}" style="color: var(--text-muted);">${msg.name}</div><div class="max-w-xs p-3 rounded-lg ${isCurrentUser ? 'bg-blue-600 text-white' : 'card'}">${msg.text}</div>`;
+                        list.appendChild(div);
+                    });
+                    list.scrollTop = list.scrollHeight;
+                };
+
+                const sendMessage = () => {
+                    const text = input.value.trim();
+                    if (text) {
+                        messages.push({ name: this.state.name, text });
+                        DB.set('mathverse_discussion', messages);
+                        input.value = '';
+                        renderMessages();
+                    }
+                };
+
+                sendBtn.onclick = sendMessage;
+                input.onkeyup = (e) => e.key === 'Enter' && sendMessage();
+                renderMessages();
+                return doc;
+            },
+
+            renderProfil() {
+                const doc = document.getElementById('profil-template').content.cloneNode(true);
+                doc.querySelector('#user-name-profile').textContent = this.state.name;
+                doc.querySelector('#user-avatar-profile').innerHTML = Avatar.render(this.state.avatar, 'w-24 h-24');
+                
+                const badgeCollection = doc.querySelector('#badge-collection');
+                if (this.state.badges.length > 0) {
+                    badgeCollection.innerHTML = '';
+                    this.state.badges.forEach(badgeId => {
+                        const badgeData = Content.badges[badgeId];
+                        badgeCollection.innerHTML += `<div class="text-center p-2" title="${badgeData.title}"><div class="text-5xl">${badgeData.icon}</div></div>`;
+                    });
+                } else { badgeCollection.innerHTML = `<p class="text-sm" style="color: var(--text-muted);">Belum ada lencana.</p>`; }
+
+                setTimeout(() => {
+                    const canvas = doc.querySelector('#progress-chart');
+                    if (!canvas || !canvas.getContext) return;
+                    const ctx = canvas.getContext('2d');
+                    new Chart(ctx, {
+                        type: 'radar',
+                        data: {
+                            labels: Object.values(Content.topics).map(t => t.title),
+                            datasets: [{
+                                label: 'Skor',
+                                data: Object.keys(Content.topics).map(id => this.state.scores[id] || 0),
+                                backgroundColor: 'rgba(66, 153, 225, 0.2)',
+                                borderColor: 'rgba(66, 153, 225, 1)',
+                                borderWidth: 2,
+                                pointBackgroundColor: 'rgba(66, 153, 225, 1)'
+                            }]
+                        },
+                        options: {
+                            maintainAspectRatio: false,
+                            scales: { 
+                                r: { 
+                                    angleLines: { color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)' }, 
+                                    grid: { color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)' }, 
+                                    pointLabels: { color: document.documentElement.classList.contains('dark') ? '#e2e8f0' : '#1a202c', font: { size: 12 } }, 
+                                    suggestedMin: 0, 
+                                    suggestedMax: 100 
+                                } 
+                            },
+                            plugins: { legend: { display: false } }
+                        }
+                    });
+                }, 0);
+                return doc;
+            },
+
+            renderPengaturan() {
+                const doc = document.getElementById('pengaturan-template').content.cloneNode(true);
+                
+                // Light/Dark Mode
+                const themeRadios = doc.querySelectorAll('input[name="theme-mode"]');
+                const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+                themeRadios.forEach(radio => {
+                    radio.checked = radio.value === currentTheme;
+                    radio.onchange = (e) => {
+                        const newTheme = e.target.value;
+                        let currentClasses = document.documentElement.className;
+                        currentClasses = currentClasses.replace(/dark|light/g, '').trim();
+                        document.documentElement.className = `${newTheme} ${currentClasses}`;
+                        DB.set('mathverse_theme', newTheme);
+                        this.navigate(window.location.hash);
+                    };
+                });
+                
+                // Theme settings
+                doc.querySelectorAll('.theme-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        const newTheme = `theme-${btn.dataset.theme}`;
+                        const html = document.documentElement;
+                        html.classList.remove('theme-cosmic', 'theme-forest', 'theme-ocean', 'theme-sunset');
+                        html.classList.add(newTheme);
+                        DB.set('mathverse_site_theme', newTheme);
+                    };
+                });
+
+                // Avatar settings
+                Avatar.init(doc, this.state.avatar, (newAvatar) => {
+                    this.state.avatar = newAvatar;
+                    this.saveState();
+                    // Just update header avatar, no need to re-navigate
+                    this.elements.mainContentArea.querySelector('#user-avatar-display').innerHTML = Avatar.render(this.state.avatar);
+                });
+
+                doc.querySelector('#reset-progress-btn').addEventListener('click', () => {
+                    this.showModal({
+                        title: 'Konfirmasi Reset',
+                        message: 'Apakah Anda yakin ingin mereset semua kemajuan belajar? Aksi ini tidak dapat dibatalkan.',
+                        confirmText: 'Ya, Reset',
+                        onConfirm: () => this.resetProgress()
+                    });
+                });
+
+                // Music Toggle
+                const musicToggle = doc.querySelector('#music-toggle');
+                musicToggle.checked = this.state.music;
+                musicToggle.onchange = (e) => {
+                    this.state.music = e.target.checked;
+                    if (this.state.music) {
+                        this.elements.music.play().catch(error => console.log("Autoplay was prevented."));
+                    } else {
+                        this.elements.music.pause();
+                    }
+                    this.saveState();
+                };
+
+                return doc;
+            },
+
+            renderTopicDetail(id) {
+                const doc = document.getElementById('topic-detail-template').content.cloneNode(true);
+                const topic = Content.topics[id];
+                doc.querySelector('#topic-title').textContent = topic.title;
+                doc.querySelector('#topic-description').textContent = topic.description;
+                doc.querySelector('#back-to-materi').onclick = () => this.navigate('#materi');
+                
+                const accordion = doc.querySelector('#topic-accordion');
+                Object.values(topic.modules).forEach((module, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'card border-0 rounded-lg overflow-hidden';
+                    div.innerHTML = `<button class="w-full text-left p-4 font-semibold flex justify-between items-center" style="background-color: rgba(113, 128, 150, 0.2);"><span class="text-main">${module.title}</span><span class="transition-transform duration-300">▼</span></button>
+                                     <div class="p-4 hidden" style="background-color: rgba(113, 128, 150, 0.1);"></div>`;
+                    const contentDiv = div.querySelector('div');
+                    
+                    if (module.type === 'quiz') Quiz.start(id, contentDiv);
+                    else if (module.type === '3d') setTimeout(() => Visualizer3D.init(contentDiv, id), 0);
+                    else if (module.type === 'graph') setTimeout(() => GraphPlotter.init(contentDiv, id), 0);
+                    else if (module.type === 'unit-circle') setTimeout(() => UnitCircleVisualizer.init(contentDiv, id), 0);
+                    else if (module.type === 'sine-wave') setTimeout(() => SineWaveVisualizer.init(contentDiv, id), 0);
+                    else if (module.type === 'vector') setTimeout(() => VectorVisualizer.init(contentDiv, id), 0);
+                    else if (module.type === 'matrix') setTimeout(() => MatrixVisualizer.init(contentDiv, id), 0);
+                    else if (module.type === 'dice-sim') setTimeout(() => ProbabilitySimulator.init(contentDiv, id), 0);
+                    else if (module.type === 'coin-sim') setTimeout(() => ProbabilitySimulator.init(contentDiv, id, { sides: 2, labels: ['Gambar', 'Angka'] }), 0);
+                    else if (module.type === 'line-equation') setTimeout(() => LineEquationVisualizer.init(contentDiv, id), 0);
+                    else contentDiv.innerHTML = module.content;
+                    
+                    div.querySelector('button').onclick = (e) => {
+                        const btn = e.currentTarget;
+                        const content = btn.nextElementSibling;
+                        const icon = btn.querySelector('span:last-child');
+                        content.classList.toggle('hidden');
+                        icon.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+                    };
+                    if (index === 0) div.querySelector('button').click();
+                    accordion.appendChild(div);
+                });
+                return doc;
+            },
+            
+            completeExercise(topicId, score) {
+                this.state.progress[topicId] = 100;
+                this.state.scores[topicId] = Math.max(this.state.scores[topicId] || 0, score);
+                this.state.points += score;
+                const today = new Date().toDateString();
+                if(this.state.lastQuizDate !== today) {
+                    this.state.points += 50;
+                    this.state.lastQuizDate = today;
+                }
+                const badgeId = `${topicId}_complete`;
+                if(Content.badges[badgeId] && !this.state.badges.includes(badgeId)) {
+                    this.state.badges.push(badgeId);
+                    this.showModal({
+                        title: `Lencana Baru: ${Content.badges[badgeId].title}`,
+                        message: `Selamat, Anda telah menguasai ${Content.topics[topicId].title}!`,
+                        badgeIcon: Content.badges[badgeId].icon
+                    });
+                }
+                this.saveState();
+            },
+            
+            showModal({title, message, confirmText, onConfirm, badgeIcon}) {
+                const modalContent = this.elements.modal.container.querySelector('.modal-content');
+                modalContent.innerHTML = `
+                    ${badgeIcon ? `<div class="text-6xl mx-auto mb-4">${badgeIcon}</div>` : ''}
+                    <h3 class="text-2xl font-bold">${title}</h3>
+                    <p class="mt-2 mb-6" style="color: var(--text-muted);">${message}</p>
+                    <div class="flex justify-end space-x-4">
+                        <button id="modal-cancel-btn" class="font-bold py-2 px-6 rounded-lg" style="background-color: var(--bg-main); border: 1px solid var(--border-main);">${onConfirm ? 'Batal' : 'Tutup'}</button>
+                        ${onConfirm ? `<button id="modal-confirm-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg">${confirmText}</button>` : ''}
+                    </div>`;
+                
+                modalContent.querySelector('#modal-cancel-btn').onclick = () => this.hideModal();
+                if (onConfirm) {
+                    modalContent.querySelector('#modal-confirm-btn').onclick = () => {
+                        onConfirm(); this.hideModal();
+                    };
+                }
+                this.elements.modal.container.classList.remove('hidden');
+            },
+
+            hideModal: () => {
+                const modal = App.elements.modal.container;
+                modal.classList.add('hidden');
+                modal.querySelector('.modal-content').innerHTML = '';
+            },
+
+            resetProgress() {
+                const name = this.state.name;
+                this.state = {
+                    name, points: 0, badges: [], lastViewed: 'Belum ada', avatar: this.state.avatar,
+                    progress: Object.keys(Content.topics).reduce((acc, key) => ({...acc, [key]: 0 }), {}),
+                    scores: Object.keys(Content.topics).reduce((acc, key) => ({...acc, [key]: 0 }), {}),
+                    lastQuizDate: null
+                };
+                this.saveState(); this.navigate('#dasbor');
+            },
+
+            showWelcomeTour() {
+                 this.showModal({
+                    title: 'Selamat Datang di MathVerse!',
+                    message: 'Ini adalah tur singkat untuk membantu Anda memulai. Klik "Lanjut" untuk melihat fitur utama.',
+                    confirmText: 'Lanjut',
+                    onConfirm: () => {
+                        this.navigate('#materi');
+                        setTimeout(() => this.showModal({
+                            title: 'Pusat Pembelajaran',
+                            message: 'Di halaman "Materi", Anda akan menemukan semua topik yang tersedia. Selesaikan satu per satu untuk membuka topik berikutnya!',
+                            confirmText: 'Mengerti',
+                            onConfirm: () => this.navigate('#dasbor')
+                        }), 500);
+                    }
+                });
+            }
+        };
+
+        const Quiz = {
+            start(topicId, container) {
+                this.topicId = topicId; this.container = container; this.questions = Content.quizzes[topicId];
+                this.currentQ = 0; this.score = 0;
+                this.renderQuestion();
+            },
+            renderQuestion() {
+                if (!this.questions || this.questions.length === 0) {
+                    this.container.innerHTML = `<p style="color:var(--text-muted);">Kuis untuk topik ini akan segera hadir!</p>`;
+                    setTimeout(() => {
+                        App.completeExercise(this.topicId, 100);
+                        App.navigate('#topic-' + this.topicId);
+                    }, 2000);
+                    return;
+                }
+                if (this.currentQ >= this.questions.length) { this.renderResult(); return; }
+                const doc = document.getElementById('quiz-template').content.cloneNode(true);
+                const qData = this.questions[this.currentQ];
+                doc.querySelector('#quiz-q-current').textContent = this.currentQ + 1;
+                doc.querySelector('#quiz-q-total').textContent = this.questions.length;
+                doc.querySelector('#quiz-progress').style.width = `${((this.currentQ) / this.questions.length) * 100}%`;
+                doc.querySelector('#question-text').textContent = qData.q;
+                doc.querySelector('#hint-btn').onclick = (e) => this.showHint(e.currentTarget, qData.hint);
+
+                const optionsContainer = doc.querySelector('#options-container');
+                [...qData.o].sort(() => Math.random() - 0.5).forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'w-full text-left p-3 border rounded-lg hover:bg-slate-700 transition';
+                    btn.style.borderColor = 'var(--border-main)';
+                    btn.textContent = opt;
+                    btn.onclick = () => this.checkAnswer(opt, qData.a, btn);
+                    optionsContainer.appendChild(btn);
+                });
+                this.container.innerHTML = ''; this.container.appendChild(doc);
+            },
+            showHint(btn, hint) {
+                btn.disabled = true; App.state.points = Math.max(0, App.state.points - 5); App.saveState();
+                const feedback = this.container.querySelector('#feedback-container');
+                feedback.className = 'mt-4 p-3 border-l-4 rounded-md text-sm font-medium border-amber-400 bg-amber-900/50 text-amber-300';
+                feedback.textContent = `Petunjuk: ${hint}`; feedback.classList.remove('hidden');
+            },
+            checkAnswer(selected, correct, btnEl) {
+                this.container.querySelectorAll('button').forEach(b => b.disabled = true);
+                const feedback = this.container.querySelector('#feedback-container');
+                feedback.classList.remove('hidden');
+                if (selected === correct) {
+                    this.score += Math.round(100 / this.questions.length);
+                    btnEl.className += ' bg-green-500/20 border-green-500 font-bold';
+                    feedback.className = 'mt-4 p-3 border-l-4 rounded-md text-sm font-medium border-green-500 bg-green-900/50 text-green-300';
+                    feedback.textContent = "Jawaban Benar!";
+                } else {
+                    btnEl.className += ' bg-red-500/20 border-red-500';
+                    feedback.className = 'mt-4 p-3 border-l-4 rounded-md text-sm font-medium border-red-500 bg-red-900/50 text-red-300';
+                    feedback.textContent = `Salah. Jawaban yang benar adalah: ${correct}`;
+                }
+                this.currentQ++; setTimeout(() => this.renderQuestion(), 1500);
+            },
+            renderResult() {
+                const doc = document.getElementById('quiz-result-template').content.cloneNode(true);
+                doc.querySelector('#quiz-score').textContent = `${this.score}%`;
+                doc.querySelector('#quiz-feedback-message').textContent = this.score < 60 ? "Terus berlatih lagi, ya!" : "Luar biasa, pemahamanmu sangat baik!";
+                doc.querySelector('#quiz-finish-btn').onclick = () => {
+                    App.completeExercise(this.topicId, this.score); App.navigate('#topic-' + this.topicId);
+                }
+                this.container.innerHTML = ''; this.container.appendChild(doc);
+            }
+        };
+
+        const Visualizer3D = {
+            init(container, topicId) {
+                container.innerHTML = `<div id="canvas-3d" class="h-80 rounded-md bg-slate-900 relative"></div>
+                    <div class="flex justify-center items-center space-x-4 mt-4">
+                        <button class="shape-btn p-2 rounded-md" data-shape="cube">Kubus</button>
+                        <button class="shape-btn p-2 rounded-md" data-shape="sphere">Bola</button>
+                        <button class="shape-btn p-2 rounded-md" data-shape="pyramid">Piramida</button>
+                    </div>
+                    <button class="mt-4 w-full font-bold py-2 rounded-lg btn-primary" onclick="App.completeExercise('${topicId}', 100); App.navigate('#topic-${topicId}')">Tandai Selesai</button>`;
+                
+                const canvasEl = container.querySelector('#canvas-3d');
+                let scene, camera, renderer, currentMesh;
+
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+                camera.position.z = 4;
+                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                
+                const resizeObserver = new ResizeObserver(entries => {
+                    for (let entry of entries) {
+                        const { width, height } = entry.contentRect;
+                        if (width > 0 && height > 0) {
+                            camera.aspect = width / height;
+                            camera.updateProjectionMatrix();
+                            renderer.setSize(width, height);
+                        }
+                    }
+                });
+                resizeObserver.observe(canvasEl);
+                
+                canvasEl.appendChild(renderer.domElement);
+                scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+                const light = new THREE.DirectionalLight(0xffffff, 1);
+                light.position.set(2, 2, 2); scene.add(light);
+
+                const material = new THREE.MeshStandardMaterial({ color: 0x4299e1, roughness: 0.5, wireframe: true });
+                const geometries = {
+                    cube: new THREE.BoxGeometry(1.5, 1.5, 1.5),
+                    sphere: new THREE.SphereGeometry(1, 16, 16),
+                    pyramid: new THREE.ConeGeometry(1.2, 2, 4)
+                };
+
+                function switchShape(shape) {
+                    if (currentMesh) scene.remove(currentMesh);
+                    currentMesh = new THREE.Mesh(geometries[shape], material);
+                    scene.add(currentMesh);
+                }
+
+                container.querySelectorAll('.shape-btn').forEach(btn => {
+                    btn.onclick = () => switchShape(btn.dataset.shape);
+                });
+
+                switchShape('cube');
+                
+                function animate() {
+                    requestAnimationFrame(animate);
+                    if (currentMesh) {
+                        currentMesh.rotation.x += 0.005; currentMesh.rotation.y += 0.005;
+                    }
+                    renderer.render(scene, camera);
+                }
+                animate();
+            }
+        };
+
+        const GraphPlotter = {
+             init(container, topicId) {
+                container.innerHTML = `<div class="h-80 rounded-md p-2" style="background-color:var(--bg-main);"><canvas id="graph-canvas"></canvas></div>
+                    <div class="mt-4">
+                        <label for="param-a" class="font-medium text-sm">Ubah parameter 'a' untuk f(x) = x² + a</label>
+                        <div class="flex items-center space-x-4">
+                            <span>-10</span>
+                            <input type="range" id="param-a" min="-10" max="10" step="1" value="0" class="w-full">
+                            <span>10</span>
+                            <span id="param-a-value" class="font-bold w-8 text-center">0</span>
+                        </div>
+                    </div>
+                     <button class="mt-4 w-full font-bold py-2 rounded-lg btn-primary" onclick="App.completeExercise('${topicId}', 100); App.navigate('#topic-${topicId}')">Tandai Selesai</button>`;
+                
+                const slider = container.querySelector('#param-a');
+                const valueLabel = container.querySelector('#param-a-value');
+                const ctx = container.querySelector('#graph-canvas').getContext('2d');
+                let chart;
+                const updateChart = (a) => {
+                    const data = { labels: [], datasets: [{ label: `f(x) = x² + ${a}`, data: [], borderColor: '#4299e1', tension: 0.1, pointRadius: 0 }] };
+                    for (let x = -10; x <= 10; x++) { data.labels.push(x); data.datasets[0].data.push(x * x + a); }
+                    if (chart) { chart.data = data; chart.update(); } 
+                    else { chart = new Chart(ctx, { type: 'line', data, options: { maintainAspectRatio: false, scales: { x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: document.documentElement.classList.contains('dark') ? 'white' : 'black' } }, y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: document.documentElement.classList.contains('dark') ? 'white' : 'black' } } }, plugins: { legend: { labels: { color: document.documentElement.classList.contains('dark') ? 'white' : 'black'} } } } }); }
+                };
+                slider.addEventListener('input', (e) => { const val = parseInt(e.target.value); valueLabel.textContent = val; updateChart(val); });
+                updateChart(0);
+             }
+        };
+
+        const UnitCircleVisualizer = {
+            init(container, topicId) {
+                container.innerHTML = `<div class="rounded-md p-2 flex justify-center" style="background-color: var(--bg-main);"><canvas id="unit-circle-canvas" class="cursor-pointer"></canvas></div>
+                    <div id="trig-values" class="mt-4 text-center font-mono"></div>
+                    <button class="mt-4 w-full font-bold py-2 rounded-lg btn-primary" onclick="App.completeExercise('${topicId}', 100); App.navigate('#topic-${topicId}')">Tandai Selesai</button>`;
+
+                const canvas = container.querySelector('#unit-circle-canvas');
+                const valuesDiv = container.querySelector('#trig-values');
+                const ctx = canvas.getContext('2d');
+                const size = Math.min(canvas.parentElement.clientWidth, 320);
+                canvas.width = size; canvas.height = size;
+                const radius = size * 0.4;
+                const center = { x: size / 2, y: size / 2 };
+                let angle = Math.PI / 4;
+
+                function draw() {
+                    ctx.clearRect(0, 0, size, size);
+                    ctx.strokeStyle = '#4a5568'; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(size, center.y); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, size); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(center.x, center.y, radius, 0, 2 * Math.PI); ctx.stroke();
+                    
+                    const x = center.x + radius * Math.cos(angle);
+                    const y = center.y - radius * Math.sin(angle);
+                    
+                    ctx.strokeStyle = document.documentElement.classList.contains('dark') ? 'white' : 'black'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(center.x, center.y); ctx.lineTo(x, y); ctx.stroke();
+                    ctx.fillStyle = '#4299e1'; ctx.beginPath(); ctx.arc(x, y, 5, 0, 2 * Math.PI); ctx.fill();
+                    ctx.strokeStyle = '#f56565';
+                    ctx.beginPath(); ctx.moveTo(x, center.y); ctx.lineTo(x, y); ctx.stroke();
+                    ctx.strokeStyle = '#48bb78';
+                    ctx.beginPath(); ctx.moveTo(center.x, y); ctx.lineTo(x, y); ctx.stroke();
+                    
+                    const degrees = (angle * 180 / Math.PI).toFixed(0);
+                    const cosVal = Math.cos(angle).toFixed(2);
+                    const sinVal = Math.sin(angle).toFixed(2);
+                    valuesDiv.innerHTML = `<span style="color:var(--text-muted);">Sudut: ${degrees}°</span> | <span style="color:#f56565">cos(θ) = ${cosVal}</span> | <span style="color:#48bb78">sin(θ) = ${sinVal}</span>`;
+                }
+
+                canvas.addEventListener('mousedown', (e) => e.preventDefault());
+                canvas.addEventListener('mousemove', (e) => {
+                    if (e.buttons !== 1) return;
+                    const rect = canvas.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+                    angle = Math.atan2(center.y - mouseY, mouseX - center.x);
+                    draw();
+                });
+                draw();
+            }
+        };
+
+        const SineWaveVisualizer = {
+             init(container, topicId) {
+                container.innerHTML = `<div class="h-80 rounded-md p-2" style="background-color:var(--bg-main);"><canvas id="sine-canvas"></canvas></div>
+                    <div class="mt-4 space-y-2">
+                        <div><label class="font-medium text-sm">Amplitudo (a)</label><input type="range" id="param-amp" min="0.5" max="3" step="0.1" value="1" class="w-full"></div>
+                        <div><label class="font-medium text-sm">Frekuensi (b)</label><input type="range" id="param-freq" min="0.5" max="3" step="0.1" value="1" class="w-full"></div>
+                    </div>
+                     <button class="mt-4 w-full font-bold py-2 rounded-lg btn-primary" onclick="App.completeExercise('${topicId}', 100); App.navigate('#topic-${topicId}')">Tandai Selesai</button>`;
+                
+                const ampSlider = container.querySelector('#param-amp');
+                const freqSlider = container.querySelector('#param-freq');
+                const ctx = container.querySelector('#sine-canvas').getContext('2d');
+                let chart;
+
+                const updateChart = () => {
+                    const amp = parseFloat(ampSlider.value);
+                    const freq = parseFloat(freqSlider.value);
+                    const data = { labels: [], datasets: [
+                        { label: `y = ${amp.toFixed(1)}sin(${freq.toFixed(1)}x)`, data: [], borderColor: '#4299e1', tension: 0.1, pointRadius: 0 },
+                        { label: `y = ${amp.toFixed(1)}cos(${freq.toFixed(1)}x)`, data: [], borderColor: '#9f7aea', tension: 0.1, pointRadius: 0 }
+                    ]};
+                    for (let x = -2 * Math.PI; x <= 2 * Math.PI; x+=0.1) {
+                        data.labels.push(x.toFixed(2));
+                        data.datasets[0].data.push(amp * Math.sin(freq * x));
+                        data.datasets[1].data.push(amp * Math.cos(freq * x));
+                    }
+                    if (chart) { chart.data = data; chart.update('none'); } 
+                    else { chart = new Chart(ctx, { type: 'line', data, options: { maintainAspectRatio: false, scales: { x: { display: false }, y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: document.documentElement.classList.contains('dark') ? 'white' : 'black' } } }, plugins: { legend: { labels: { color: document.documentElement.classList.contains('dark') ? 'white' : 'black'} } } } }); }
+                };
+                
+                ampSlider.addEventListener('input', updateChart);
+                freqSlider.addEventListener('input', updateChart);
+                updateChart();
+             }
+        };
+
+        const VectorVisualizer = {
+             init(container, topicId) {
+                container.innerHTML = `<div class="rounded-md p-2 flex justify-center" style="background-color:var(--bg-main);"><canvas id="vector-canvas" class="cursor-pointer"></canvas></div>
+                    <div id="vector-values" class="mt-4 text-center font-mono"></div>
+                    <button class="mt-4 w-full font-bold py-2 rounded-lg btn-primary" onclick="App.completeExercise('${topicId}', 100); App.navigate('#topic-${topicId}')">Tandai Selesai</button>`;
+
+                const canvas = container.querySelector('#vector-canvas');
+                const valuesDiv = container.querySelector('#vector-values');
+                const ctx = canvas.getContext('2d');
+                const size = Math.min(canvas.parentElement.clientWidth, 320);
+                canvas.width = size; canvas.height = size;
+                const center = { x: size / 2, y: size / 2 };
+                
+                let vectorA = {x: 60, y: -40};
+                let vectorB = {x: -30, y: 50};
+
+                function drawArrow(x0, y0, x1, y1, color) {
+                    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+                    const angle = Math.atan2(y1 - y0, x1 - x0);
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x1 - 10 * Math.cos(angle - Math.PI / 6), y1 - 10 * Math.sin(angle - Math.PI / 6));
+                    ctx.lineTo(x1 - 10 * Math.cos(angle + Math.PI / 6), y1 - 10 * Math.sin(angle + Math.PI / 6));
+                    ctx.closePath(); ctx.fill();
+                }
+
+                function draw() {
+                    ctx.clearRect(0, 0, size, size);
+                    drawArrow(center.x, center.y, center.x + vectorA.x, center.y + vectorA.y, '#4299e1');
+                    drawArrow(center.x, center.y, center.x + vectorB.x, center.y + vectorB.y, '#9f7aea');
+                    const vectorR = {x: vectorA.x + vectorB.x, y: vectorA.y + vectorB.y};
+                    drawArrow(center.x, center.y, center.x + vectorR.x, center.y + vectorR.y, '#f56565');
+                    valuesDiv.innerHTML = `<span style="color:#4299e1">A(${vectorA.x}, ${-vectorA.y})</span> + <span style="color:#9f7aea">B(${vectorB.x}, ${-vectorB.y})</span> = <span style="color:#f56565">R(${vectorR.x}, ${-vectorR.y})</span>`;
+                }
+
+                let activeVector = null;
+                canvas.addEventListener('mousedown', (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left; const mouseY = e.clientY - rect.top;
+                    const distA = Math.hypot(mouseX - (center.x + vectorA.x), mouseY - (center.y + vectorA.y));
+                    const distB = Math.hypot(mouseX - (center.x + vectorB.x), mouseY - (center.y + vectorB.y));
+                    if (distA < 15) activeVector = 'A';
+                    else if (distB < 15) activeVector = 'B';
+                    else activeVector = null;
+                });
+                canvas.addEventListener('mouseup', () => activeVector = null);
+                canvas.addEventListener('mousemove', (e) => {
+                    if (!activeVector) return;
+                    const rect = canvas.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left; const mouseY = e.clientY - rect.top;
+                    if (activeVector === 'A') { vectorA = {x: mouseX - center.x, y: mouseY - center.y}; }
+                    else { vectorB = {x: mouseX - center.x, y: mouseY - center.y}; }
+                    draw();
+                });
+                draw();
+             }
+        };
+
+        const MatrixVisualizer = {
+            init(container, topicId) {
+                container.innerHTML = `<div class="grid grid-cols-3 items-center gap-4 text-center">
+                        <div><h4 class="font-bold mb-2">Matriks A</h4><div id="matrix-a" class="grid grid-cols-2 gap-2"></div></div>
+                        <div class="text-3xl font-bold">+</div>
+                        <div><h4 class="font-bold mb-2">Matriks B</h4><div id="matrix-b" class="grid grid-cols-2 gap-2"></div></div>
+                    </div>
+                    <div class="text-center text-3xl font-bold my-4">=</div>
+                    <div class="text-center">
+                        <h4 class="font-bold mb-2">Hasil A + B</h4>
+                        <div id="matrix-r" class="grid grid-cols-2 gap-2 max-w-xs mx-auto p-4 rounded-lg" style="background-color: var(--bg-main);"></div>
+                    </div>
+                    <button class="mt-6 w-full font-bold py-2 rounded-lg btn-primary" onclick="App.completeExercise('${topicId}', 100); App.navigate('#topic-${topicId}')">Tandai Selesai</button>`;
+                
+                const matrixAContainer = container.querySelector('#matrix-a');
+                const matrixBContainer = container.querySelector('#matrix-b');
+                const matrixRContainer = container.querySelector('#matrix-r');
+                
+                let matrixA = [1, 2, 3, 4];
+                let matrixB = [5, 6, 7, 8];
+
+                const createMatrixInputs = (container, matrixData) => {
+                    for (let i = 0; i < 4; i++) {
+                        const input = document.createElement('input');
+                        input.type = 'number';
+                        input.className = 'w-full border rounded text-center p-2';
+                        input.style.backgroundColor = 'var(--bg-main)';
+                        input.style.borderColor = 'var(--border-main)';
+                        input.value = matrixData[i];
+                        input.oninput = () => updateResult();
+                        container.appendChild(input);
+                    }
+                };
+                
+                const updateResult = () => {
+                    matrixA = Array.from(matrixAContainer.querySelectorAll('input')).map(el => parseInt(el.value) || 0);
+                    matrixB = Array.from(matrixBContainer.querySelectorAll('input')).map(el => parseInt(el.value) || 0);
+                    matrixRContainer.innerHTML = '';
+                    for (let i = 0; i < 4; i++) {
+                        const div = document.createElement('div');
+                        div.className = 'p-2 font-bold text-lg';
+                        div.textContent = matrixA[i] + matrixB[i];
+                        matrixRContainer.appendChild(div);
+                    }
+                };
+
+                createMatrixInputs(matrixAContainer, matrixA);
+                createMatrixInputs(matrixBContainer, matrixB);
+                updateResult();
+            }
+        };
+
+        const ProbabilitySimulator = {
+            init(container, topicId, config = { sides: 6, labels: ['1', '2', '3', '4', '5', '6'] }) {
+                container.innerHTML = `<div class="h-60 rounded-md p-2" style="background-color:var(--bg-main);"><canvas id="dice-chart"></canvas></div>
+                    <div class="mt-4 space-y-2">
+                        <div><label class="font-medium text-sm">Jumlah Percobaan</label><input type="range" id="param-rolls" min="10" max="1000" step="10" value="100" class="w-full"></div>
+                        <div class="flex items-center space-x-4">
+                            <button id="roll-btn" class="font-bold py-2 px-4 rounded-lg text-sm btn-primary flex-1">Lakukan Simulasi</button>
+                            <span id="rolls-value" class="font-mono" style="color:var(--text-muted);">100 Percobaan</span>
+                        </div>
+                    </div>
+                     <button class="mt-4 w-full font-bold py-2 rounded-lg btn-primary" onclick="App.completeExercise('${topicId}', 100); App.navigate('#topic-${topicId}')">Tandai Selesai</button>`;
+
+                const slider = container.querySelector('#param-rolls');
+                const valueLabel = container.querySelector('#rolls-value');
+                const rollBtn = container.querySelector('#roll-btn');
+                const ctx = container.querySelector('#dice-chart').getContext('2d');
+                let chart;
+
+                const runSimulation = () => {
+                    const numRolls = parseInt(slider.value);
+                    let results = {};
+                    config.labels.forEach((_, i) => results[i+1] = 0);
+
+                    for (let i = 0; i < numRolls; i++) {
+                        const roll = Math.floor(Math.random() * config.sides) + 1;
+                        results[roll]++;
+                    }
+                    const data = {
+                        labels: config.labels,
+                        datasets: [{ label: 'Frekuensi', data: Object.values(results), backgroundColor: '#4299e1' }]
+                    };
+                    const chartOptions = {
+                         maintainAspectRatio: false, 
+                         scales: { 
+                             y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: document.documentElement.classList.contains('dark') ? 'white' : 'black' } }, 
+                             x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: document.documentElement.classList.contains('dark') ? 'white' : 'black' } } 
+                        }, 
+                        plugins: { legend: { display: false } } 
+                    };
+                    if (chart) { chart.data = data; chart.update(); }
+                    else { chart = new Chart(ctx, { type: 'bar', data, options: chartOptions }); }
+                };
+                
+                slider.addEventListener('input', (e) => valueLabel.textContent = `${e.target.value} Percobaan`);
+                rollBtn.addEventListener('click', runSimulation);
+                runSimulation();
+            }
+        };
+
+        const LineEquationVisualizer = {
+             init(container, topicId) {
+                container.innerHTML = `<div class="h-80 rounded-md p-2" style="background-color:var(--bg-main);"><canvas id="line-canvas"></canvas></div>
+                    <div class="mt-4 space-y-2">
+                        <div><label class="font-medium text-sm">Gradien (m)</label><input type="range" id="param-m" min="-5" max="5" step="0.1" value="1" class="w-full"></div>
+                        <div><label class="font-medium text-sm">Intersep (c)</label><input type="range" id="param-c" min="-10" max="10" step="1" value="0" class="w-full"></div>
+                    </div>
+                     <button class="mt-4 w-full font-bold py-2 rounded-lg btn-primary" onclick="App.completeExercise('${topicId}', 100); App.navigate('#topic-${topicId}')">Tandai Selesai</button>`;
+                
+                const mSlider = container.querySelector('#param-m');
+                const cSlider = container.querySelector('#param-c');
+                const ctx = container.querySelector('#line-canvas').getContext('2d');
+                let chart;
+
+                const updateChart = () => {
+                    const m = parseFloat(mSlider.value);
+                    const c = parseFloat(cSlider.value);
+                    const data = { labels: [], datasets: [{ label: `y = ${m.toFixed(1)}x + ${c}`, data: [], borderColor: '#4299e1', tension: 0.1, pointRadius: 0 }] };
+                    for (let x = -10; x <= 10; x++) {
+                        data.labels.push(x);
+                        data.datasets[0].data.push(m * x + c);
+                    }
+                    const chartOptions = { 
+                        maintainAspectRatio: false, 
+                        scales: { 
+                            x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: document.documentElement.classList.contains('dark') ? 'white' : 'black' }, min:-10, max:10 }, 
+                            y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: document.documentElement.classList.contains('dark') ? 'white' : 'black' } } }, 
+                        plugins: { legend: { labels: { color: document.documentElement.classList.contains('dark') ? 'white' : 'black' } } } 
+                    };
+                    if (chart) { chart.data = data; chart.update('none'); } 
+                    else { chart = new Chart(ctx, { type: 'line', data, options: chartOptions }); }
+                };
+                
+                mSlider.addEventListener('input', updateChart);
+                cSlider.addEventListener('input', updateChart);
+                updateChart();
+             }
+        };
+
+        const Avatar = {
+            parts: {
+                head: {
+                    head1: (color) => `<circle cx="50" cy="50" r="45" fill="${color}"/>`
+                },
+                eyes: {
+                    eyes1: () => `<circle cx="35" cy="40" r="5" fill="black"/><circle cx="65" cy="40" r="5" fill="black"/>`,
+                    eyes2: () => `<rect x="30" y="35" width="10" height="10" fill="black"/><rect x="60" y="35" width="10" height="10" fill="black"/>`
+                },
+                mouth: {
+                    mouth1: () => `<path d="M 30 65 Q 50 80 70 65" stroke="black" fill="transparent" stroke-width="3"/>`,
+                    mouth2: () => `<rect x="40" y="65" width="20" height="5" fill="black"/>`
+                }
+            },
+            render(config, className = '') {
+                if (!config) return `<div class="${className}"></div>`;
+                if (config.imageUrl) {
+                    return `<div class="${className} bg-cover bg-center" style="background-image: url('${config.imageUrl}')"></div>`;
+                }
+                return `<svg viewBox="0 0 100 100" class="${className}">
+                            ${this.parts.head[config.head](config.color)}
+                            ${this.parts.eyes[config.eyes]()}
+                            ${this.parts.mouth[config.mouth]()}
+                        </svg>`;
+            },
+            init(container, currentConfig, onUpdate) {
+                const preview = container.querySelector('#avatar-preview');
+                const colorInput = container.querySelector('#avatar-color');
+                const headSelect = container.querySelector('#avatar-head');
+                const eyesSelect = container.querySelector('#avatar-eyes');
+                const mouthSelect = container.querySelector('#avatar-mouth');
+                const uploadBtn = container.querySelector('#avatar-upload-btn');
+                const uploadInput = container.querySelector('#avatar-upload-input');
+                const removeBtn = container.querySelector('#avatar-remove-btn');
+
+                const populateSelect = (select, parts) => {
+                    Object.keys(parts).forEach(key => {
+                        const option = document.createElement('option');
+                        option.value = key;
+                        option.textContent = key;
+                        select.appendChild(option);
+                    });
+                };
+                
+                populateSelect(headSelect, this.parts.head);
+                populateSelect(eyesSelect, this.parts.eyes);
+                populateSelect(mouthSelect, this.parts.mouth);
+                
+                colorInput.value = currentConfig.color;
+                headSelect.value = currentConfig.head;
+                eyesSelect.value = currentConfig.eyes;
+                mouthSelect.value = currentConfig.mouth;
+
+                const update = () => {
+                    const newConfig = {
+                        color: colorInput.value,
+                        head: headSelect.value,
+                        eyes: eyesSelect.value,
+                        mouth: mouthSelect.value,
+                        imageUrl: currentConfig.imageUrl
+                    };
+                    preview.innerHTML = this.render(newConfig, 'w-24 h-24');
+                    onUpdate(newConfig);
+                };
+
+                uploadBtn.onclick = () => uploadInput.click();
+                removeBtn.onclick = () => {
+                    currentConfig.imageUrl = null;
+                    update();
+                };
+                uploadInput.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            currentConfig.imageUrl = event.target.result;
+                            update();
+                        }
+                        reader.readAsDataURL(file);
+                    }
+                };
+
+                colorInput.oninput = update;
+                headSelect.onchange = update;
+                eyesSelect.onchange = update;
+                mouthSelect.onchange = update;
+
+                update();
+            }
+        };
+    </script>
+</body>
+</html>
+
